@@ -30,7 +30,29 @@ i = 0 #Переменная для подсчета вопроса
 username = '' #Переменная для хранения имени
 review = '' #Переменная для хранения отзыва
 
+#Простенькая аналитика
+def analytics(func: callable):
+    total_messages = 0
+    users = set()
+    tottal_users = 0
+
+    def analytics_wrapper(message):
+        nonlocal total_messages, tottal_users
+        total_messages +=1
+
+        if message.chat.id not in users:
+            users.add(message.chat.id)
+            tottal_users +=1
+        print(f"Новые сообщения: {message.text} \
+        Всего сообщений: {total_messages} \
+              Уникальных пользователей: {tottal_users}")
+
+        return func(message)
+    return analytics_wrapper
+
+
 @bot.message_handler(commands=['start'])
+@analytics
 def start(message):
     with open('HakatonZoo\photo_2023-06-13_12-14-34.jpg', 'rb') as f:
         photo = bot.send_photo(message.chat.id, f)
@@ -47,6 +69,7 @@ def start(message):
 
 
 @bot.message_handler(content_types=['text'])
+@analytics
 def func(message):
     if message.text == 'Отзывы':
         bot.send_message(message.from_user.id, 'Как Вас зовут?')
@@ -70,13 +93,13 @@ def question(message):
         if i <= count:
             cursor.execute(f'SELECT question FROM question WHERE id_question = {i}')
             question = cursor.fetchone()
-            cursor.execute(f'SELECT answer FROM quiz WHERE id_answer = {i}.1')
+            cursor.execute(f'SELECT answer FROM question WHERE id_answer = {i}.1')
             answer1 = str(*cursor.fetchone())
-            cursor.execute(f'select answer from quiz where id_answer = {i}.2')
+            cursor.execute(f'select answer from question where id_answer = {i}.2')
             answer2 = str(*cursor.fetchone())
-            cursor.execute(f'select answer from quiz where id_answer = {i}.3')
+            cursor.execute(f'select answer from question where id_answer = {i}.3')
             answer3 = str(*cursor.fetchone())
-            cursor.execute(f'select answer from quiz where id_answer = {i}.4')
+            cursor.execute(f'select answer from question where id_answer = {i}.4')
             answer4 = str(*cursor.fetchone())
 
 
@@ -127,7 +150,6 @@ def callback(call):
                     for animal_name, answer in answers:
                         if answer is not None and answer != 0:
                             animal[animal_name].append(answer)
-                print(animal)
                 question(message=call.message)
 
             elif call.data == 'answer_2':
